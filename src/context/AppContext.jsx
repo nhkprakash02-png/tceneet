@@ -21,11 +21,11 @@
 //     hydration mismatch. See the `hydrated` flag below for how persistence is gated on it.
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { getRedirectResult, onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 import { loadDB, saveDB as persistDB, attachDbRealtimeListeners, attachSubmissionsRealtimeListener, writeSubmission, loadBanners } from '../lib/db';
 import { emptyDB } from '../lib/seedData';
 import { fbAuth } from '../firebase';
-import { isExemptEmail } from '../lib/utils';
+import { isExemptEmail, uid } from '../lib/utils';
 import { PATH_FOR_TAB, tabForPath, parseTestDeepLink } from '../lib/routes';
 
 const CUR_KEY = 'currentUser';
@@ -236,25 +236,23 @@ export function AppProvider({ children }) {
     return !!(rec && rec.paymentStatus === 'Approved');
   }, [user, DB.students]);
 
-  // Completes Google sign-in (signInWithRedirect() in AuthModal.jsx — see that file for why
-  // redirect is used instead of a popup).
+  // Completes Google sign-in (signInWithPopup() in AuthModal.jsx) — see that file for why a
+  // popup is used instead of a redirect.
   //
-  // This is split into two parts on purpose:
-  //  1. getRedirectResult() is called once, immediately, purely to surface any sign-in ERROR
-  //     right away (e.g. account-exists-with-different-credential). It is NOT relied on to
-  //     detect a successful sign-in — that API is a one-shot call that Firebase's own docs
-  //     note can silently return nothing if it's called even slightly late, and gating it
-  //     behind `dbLoading` (as the previous version did) was exactly that kind of delay: sign-in
-  //     would fully succeed with Google, but the app would never notice.
-  //  2. onAuthStateChanged() is the actual source of truth. Firebase guarantees this fires once
-  //     its internal auth state has finished restoring — including right after a redirect
-  //     completes — so this is what reliably drives "log this person into the app." As a bonus,
-  //     it also means a student who signed in with Google before gets recognized automatically
-  //     on future visits, not just immediately after a fresh redirect.
-  useEffect(() => {
-    if (!fbAuth) return;
-    getRedirectResult(fbAuth).catch((e) => console.warn('Google redirect sign-in error', e));
-  }, []);
+  // onAuthStateChanged() is the single source of truth for "is anyone logged in" for BOTH
+  // Google and email/password accounts: AuthModal.jsx only ever calls the raw Firebase Auth
+  // functions (signInWithPopup / signInWithEmailAndPassword / createUserWithEmailAndPassword)
+  // and never touches `user` itself — this effect is what actually logs someone into the app
+  // once Firebase confirms the sign-in, for every auth method uniformly. Firebase guarantees
+  // this fires once its internal auth state has finished restoring on load too, so a returning
+  // visitor (any sign-in method) is recognized automatically without needing to re-login.
+  const pendingSignupProfileRef = useRef(null);
+  // Called by AuthModal right before createUserWithEmailAndPassword, so that when this effect
+  // sees the resulting brand-new Firebase user, it can create their app profile immediately
+  // with the name/phone already collected on the signup form — instead of (incorrectly) treating
+  // them like a first-time Google sign-in and popping open a second "complete your profile" modal
+  // asking for the same details again.
+  const setPendingSignupProfile = useCallback((p) => { pendingSignupProfileRef.current = p; }, []);
 
   useEffect(() => {
     if (!fbAuth || dbLoading) return;
@@ -262,30 +260,47 @@ export function AppProvider({ children }) {
       if (!firebaseUser || !firebaseUser.email) return;
       const currentUser = userRef.current;
       if (currentUser && (currentUser.email || '').toLowerCase() === firebaseUser.email.toLowerCase()) return; // already logged in as this account
-      const profile = { name: firebaseUser.displayName || 'Student', email: firebaseUser.email, phone: firebaseUser.phoneNumber || '', photoURL: firebaseUser.photoURL || '' };
+      const profile = { uid: firebaseUser.uid, name: firebaseUser.displayName || 'Student', email: firebaseUser.email, phone: firebaseUser.phoneNumber || '', photoURL: firebaseUser.photoURL || '' };
       const existing = dbRef.current.students.find((s) =>
+        s.uid === firebaseUser.uid ||
         (s.email || '').toLowerCase() === profile.email.toLowerCase() ||
         (profile.phone && s.phone === profile.phone));
       if (existing) {
-        // Auto-fill the Google profile photo as their avatar — but only if they don't already
-        // have one (a previously-uploaded cropped photo, or a Google photo from a past login),
-        // so this never overwrites a custom avatar they've since chosen.
-        if (profile.photoURL && !existing.photoURL) {
-          const updated = { ...existing, photoURL: profile.photoURL };
+        pendingSignupProfileRef.current = null; // this email already has a profile — ignore any pending signup details
+        // Backfills the Firebase uid (for faster/more reliable matching next time) and the
+        // Google profile photo — but only if missing, so this never overwrites a custom avatar
+        // or an existing uid link.
+        const needsPhoto = profile.photoURL && !existing.photoURL;
+        const needsUid = !existing.uid;
+        if (needsPhoto || needsUid) {
+          const updated = { ...existing, ...(needsPhoto ? { photoURL: profile.photoURL } : {}), ...(needsUid ? { uid: firebaseUser.uid } : {}) };
           saveDB((prev) => ({ ...prev, students: prev.students.map((s) => (s.id === existing.id ? updated : s)) }));
           setUser(updated);
         } else {
           setUser(existing);
         }
+        closeModal();
         // Was setActiveTabState('dashboard') pre-migration; now a real route change, which is
         // the equivalent since activeTab is derived from the URL.
         router.push(PATH_FOR_TAB.dashboard);
+      } else if (pendingSignupProfileRef.current) {
+        // A brand-new email/password signup, with name/phone already collected on the form —
+        // create their profile directly, no extra modal needed.
+        const pending = pendingSignupProfileRef.current;
+        pendingSignupProfileRef.current = null;
+        const student = { id: uid('st'), uid: firebaseUser.uid, name: pending.name, email: profile.email, phone: pending.phone, photoURL: '', address: '', joinDate: new Date().toISOString().slice(0, 10), registeredAt: new Date().toISOString(), paymentStatus: 'Not Enrolled', batch: '—', pendingReview: true };
+        saveDB((prev) => ({ ...prev, students: [...prev.students, student] }));
+        setUser(student);
+        closeModal();
+        router.push(PATH_FOR_TAB.dashboard);
       } else {
+        // A brand-new Google sign-in with no prior signup form data — ask for the one missing
+        // detail (phone) via GoogleRegisterModal.
         setModalState({ type: 'googleRegister', props: { profile } });
       }
     });
     return unsub;
-  }, [dbLoading, saveDB, setUser, router]);
+  }, [dbLoading, saveDB, setUser, router, closeModal]);
 
   // True for the 4 exempt mentor/admin accounts — full content access bypass everywhere a mock
   // test or material would otherwise check the site-admin flag. Kept separate from `admin`
@@ -303,8 +318,8 @@ export function AppProvider({ children }) {
     examInProgress, setExamInProgress,
     isEnrolled, isExemptUser, hasFullAccess, logout,
     deepLinkTestId, consumeDeepLinkTestId, addSubmission,
-    modal, openModal, closeModal,
-  }), [DB, saveDB, dbLoading, banners, user, setUser, admin, setAdmin, theme, toggleTheme, activeTab, setTab, goBack, tabStack, examInProgress, isEnrolled, isExemptUser, hasFullAccess, logout, deepLinkTestId, consumeDeepLinkTestId, addSubmission, modal, openModal, closeModal]);
+    modal, openModal, closeModal, setPendingSignupProfile,
+  }), [DB, saveDB, dbLoading, banners, user, setUser, admin, setAdmin, theme, toggleTheme, activeTab, setTab, goBack, tabStack, examInProgress, isEnrolled, isExemptUser, hasFullAccess, logout, deepLinkTestId, consumeDeepLinkTestId, addSubmission, modal, openModal, closeModal, setPendingSignupProfile]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
