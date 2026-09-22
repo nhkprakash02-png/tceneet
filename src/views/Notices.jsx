@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MapPin, Globe, Phone, Mail, MessageCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { uid } from '../lib/utils';
+import { FACULTY } from '../lib/faculty';
 
 export default function Notices() {
   const { DB, saveDB } = useApp();
@@ -40,20 +41,28 @@ export default function Notices() {
         <h2 className="font-display font-800 text-2xl mb-4">Contact <span className="gold-text">Us</span></h2>
         <div className="card glow-border rounded-2xl p-5 mb-5">
           <h4 className="font-semibold text-xs uppercase tracking-wide muted mb-3">Institute Address</h4>
-          <p className="text-sm flex items-start gap-2 mb-3"><MapPin className="w-4 h-4 gold-text shrink-0 mt-0.5" /> Update your institute address in src/views/Notices.jsx</p>
-          <p className="text-sm gold-text font-semibold flex items-center gap-2 mb-2"><Globe className="w-3.5 h-3.5" /> your-neet-institute-domain.com</p>
-          <p className="text-sm muted flex items-center gap-2 mb-2"><Phone className="w-3.5 h-3.5 gold-text" /> +91 XXXXX XXXXX</p>
-          <p className="text-sm muted flex items-center gap-2"><Mail className="w-3.5 h-3.5 gold-text" /> yourinstitute@example.com</p>
+          <p className="text-sm gold-text font-semibold flex items-center gap-2 mb-2"><Globe className="w-3.5 h-3.5" /> neet.tcenahata.in</p>
+          <p className="text-sm flex items-start gap-2 mb-3"><MapPin className="w-4 h-4 gold-text shrink-0 mt-0.5" /> Nahata near anchal, PO Nahata, PS Gopalnagar, West Bengal - 743290</p>
+          <p className="text-sm muted flex items-center gap-2 mb-2"><Phone className="w-3.5 h-3.5 gold-text" /> +91 73846 44030</p>
+          <p className="text-sm muted flex items-center gap-2 mb-3"><Mail className="w-3.5 h-3.5 gold-text" /> tcenahata@gmail.com</p>
+          <iframe
+            title="TCE institute location on Google Maps"
+            src={`https://www.google.com/maps?q=${encodeURIComponent('XPV4+7H Gopalnagar, Khamarkalla, West Bengal')}&output=embed`}
+            className="w-full h-40 sm:h-44 rounded-lg"
+            style={{ border: '1px solid var(--border)' }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
         <div className="card glow-border rounded-2xl p-5 mb-5">
           <h4 className="font-semibold text-xs uppercase tracking-wide muted mb-3">Faculty Contact</h4>
           <div className="space-y-3">
-            {(DB.mentors || []).length ? DB.mentors.map((m) => (
+            {FACULTY.map((m) => (
               <a key={m.id} href={`https://wa.me/${m.phone}?text=Hello%2C%20I%20want%20to%20know%20more%20about%20TCE%20NEET%20classes`} target="_blank" rel="noreferrer" className="flex items-center justify-between card2 rounded-lg px-3 py-2.5">
-                <div><p className="text-sm font-semibold">{m.name}</p><p className="text-xs muted">{m.subject}{m.phone ? ' — +' + m.phone : ''}</p></div>
+                <div><p className="text-sm font-semibold">{m.name} — {m.role}</p><p className="text-xs muted">{m.displayPhone}</p></div>
                 <MessageCircle className="w-4 h-4 text-[#25D366]" />
               </a>
-            )) : <p className="text-xs muted">Add your faculty via Admin Panel → Mentors / Faculty.</p>}
+            ))}
           </div>
         </div>
         <div className="card glow-border rounded-2xl p-5">
