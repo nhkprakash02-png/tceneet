@@ -65,7 +65,7 @@ export default function AppShell({ children }) {
           </button>
         )}
         <a
-          href="https://wa.me/91XXXXXXXXXX?text=Hello%2C%20I%20want%20to%20know%20more%20about%20TCE%20NEET%20batches"
+          href="https://wa.me/917047828835?text=Hello%2C%20I%20want%20to%20know%20more%20about%20TCE%20NEET%20batches"
           target="_blank" rel="noreferrer"
           className="flex items-center gap-2 px-4 py-3 rounded-full bg-[#25D366] text-white shadow-lg text-xs font-bold"
         >

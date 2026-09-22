@@ -14,12 +14,11 @@ export default function EnrollModal({ context, batchId }) {
   const batch = batchId ? DB.batches.find((b) => b.id === batchId) : DB.batches[0];
   const amount = batch ? batch.price : 300;
   const batchName = batch ? batch.name : 'TCE NEET Batch';
-  // TODO: replace with your own UPI ID and WhatsApp support number before going live.
-  const upiId = 'yourupi@oksbi';
+  const upiId = '7047828835@ybl';
   const upiUri = `upi://pay?pa=${upiId}&pn=TCE%20NEET&am=${amount}&cu=INR&tn=${encodeURIComponent(batchName)}`;
   const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiUri)}`;
   const mobile = isMobileDevice();
-  const waHref = `https://wa.me/91XXXXXXXXXX?text=${encodeURIComponent('Hello, I have paid ' + priceLabel(amount) + ' for ' + batchName + ' enrollment. Name: ' + (user ? user.name : '') + '. Sharing payment screenshot below.')}`;
+  const waHref = `https://wa.me/917047828835?text=${encodeURIComponent('Hello, I have paid ' + priceLabel(amount) + ' for ' + batchName + ' enrollment. Name: ' + (user ? user.name : '') + '. Sharing payment screenshot below.')}`;
 
   const title = context === 'locked'
     ? 'Enroll in Batch to Unlock This Mock Test'

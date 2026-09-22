@@ -9,9 +9,8 @@ import { useApp } from '../context/AppContext';
 // but anyone can read it straight out of the shipped JS. See README "Security notes" for a
 // recommended fix (Firebase custom claims / a real admin auth flow) before relying on this
 // for anything more than "has clicked the door labeled admin."
-// CHANGE THESE before deploying — these are placeholder credentials for the NEET template.
-const ADMIN_EMAIL = 'admin@tceneet.com';
-const ADMIN_PASSWORD_DEFAULT = 'ChangeMe@123';
+const ADMIN_EMAIL = 'tcenahata@gmail.com';
+const ADMIN_PASSWORD_DEFAULT = 'X@x1234567';
 
 export default function AdminLoginModal() {
   const { setAdmin, closeModal, openModal } = useApp();
