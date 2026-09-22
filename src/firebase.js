@@ -17,13 +17,13 @@ import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 export const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyD1BcEn1cC8HMCcnopFcu_ma_i00bTw594',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyDlBcEn1eC8HMCcnoPfCu_ma_iOObTw594',
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'tce-neet.firebaseapp.com',
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'tce-neet',
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'tce-neet.firebasestorage.app',
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_SENDER_ID || '554869510136',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:554869510136:web:97137b6bdf2957c88100d',
-  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-VYBDDV6F5',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:554869510136:web:97137b6bdf02957c88100d',
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || 'G-VYBYDDV6F5',
 };
 
 export const DEMO_MODE = false;
