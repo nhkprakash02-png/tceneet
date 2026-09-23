@@ -11,7 +11,6 @@ import QuizManager from '../components/admin/QuizManager';
 import MaterialsManager from '../components/admin/MaterialsManager';
 import BatchesManager from '../components/admin/BatchesManager';
 import BannersManager from '../components/admin/BannersManager';
-import MentorsManager from '../components/admin/MentorsManager';
 import NoticesManager from '../components/admin/NoticesManager';
 import UrgentNoticesManager from '../components/admin/UrgentNoticesManager';
 import SettingsManager from '../components/admin/SettingsManager';
@@ -26,7 +25,6 @@ const TABS = [
   ['materials', 'Materials', MaterialsManager],
   ['batches', 'Batches', BatchesManager],
   ['banners', 'Banner Slider', BannersManager],
-  ['mentors', 'Mentors / Faculty', MentorsManager],
   ['urgent', 'Urgent Notices', UrgentNoticesManager],
   ['content', 'Notices', NoticesManager],
   ['settings', 'Settings', SettingsManager],
